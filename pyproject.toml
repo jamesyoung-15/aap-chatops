@@ -13,6 +13,7 @@ dependencies = [
     "pytest-asyncio>=1.4.0",
     "ruff>=0.16.0",
     "slack-bolt>=1.30.0",
+    "truststore>=0.10.4",
 ]
 
 [build-system]
