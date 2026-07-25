@@ -15,7 +15,7 @@ class Settings(BaseSettings):
 
     # aap configs
     aap_base_url: str | None = Field(
-        default=None, description="AAP hostname (eg. https://<aap-domain>.com)"
+        default=None, description="AAP hostname (eg. <aap-domain>.com)"
     )
     aap_api_token: str | None = Field(default=None, description="AAP API token")
 
