@@ -1,11 +1,17 @@
 """Project configurable settings loaded from .env"""
 
+from typing import Literal
+
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     """User configurations for project such as API tokens"""
+
+    chat_platform: Literal["slack", "teams"] = Field(
+        default="slack", description="Which chat application to use."
+    )
 
     # aap configs
     aap_base_url: str | None = Field(
