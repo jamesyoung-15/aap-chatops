@@ -1,0 +1,19 @@
+[project]
+name = "aap-chatops"
+version = "0.1.0"
+description = "Python-based ChatOps bridge that connects chat platforms to Ansible Automation Platform (AAP)."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "httpx>=0.28.1",
+    "ruff>=0.16.0",
+    "slack-bolt>=1.30.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.11.21,<0.12"]
+build-backend = "uv_build"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = "tests"
