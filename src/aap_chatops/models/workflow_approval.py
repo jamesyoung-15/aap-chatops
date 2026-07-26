@@ -57,11 +57,11 @@ class WorkflowApproval(BaseModel):
     @property
     def workflow_name(self) -> str | None:
         """Name of the workflow job this approval node belongs to, if known."""
-        workflow_job = self.summary_fields.workflow_job
+        workflow_job = self.summary_fields.workflow_job  # pylint: disable=no-member
         return workflow_job.name if workflow_job else None
 
     @property
     def created_by_username(self) -> str | None:
         """Username of the user who created this approval, if known."""
-        created_by = self.summary_fields.created_by
+        created_by = self.summary_fields.created_by  # pylint: disable=no-member
         return created_by.username if created_by else None
