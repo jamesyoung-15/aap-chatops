@@ -2,7 +2,9 @@
 #
 # Per entry:
 #   task            required, name of a registered alert task
-#   cron            required, standard 5 field cron expression
+#   cron            required, 5 field cron expression. The day of week field must
+#                   be "*" or day names (eg. mon-fri); numbers are rejected because
+#                   APScheduler counts 0 as Monday rather than Sunday.
 #   timezone        optional, IANA name, defaults to the alert_timezone setting
 #   channel         optional, Slack channel id, defaults to the
 #                   default_alert_channel_id setting
@@ -12,5 +14,5 @@
 
 alerts:
   - task: pending_approvals
-    cron: "0 10 * * 1-5"
+    cron: "0 10 * * mon-fri"
     catchup_minutes: 360

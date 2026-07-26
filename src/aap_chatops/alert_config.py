@@ -40,7 +40,21 @@ class AlertEntry(BaseModel):
     @field_validator("cron")
     @classmethod
     def _validate_cron(cls, value: str) -> str:
-        """Let APScheduler be both the parser and the validator for cron syntax."""
+        """Let APScheduler parse the expression, but reject its day of week footgun first."""
+        fields = value.split()
+        if len(fields) != 5:
+            raise ValueError(
+                f"invalid cron expression {value!r}: expected 5 fields, got {len(fields)}"
+            )
+        # APScheduler numbers days from 0=Monday while cron uses 0=Sunday, and
+        # from_crontab does not translate, so "1-5" silently means tue-sat. Names are
+        # unambiguous, and from_crontab rejects misspelled ones on its own.
+        if any(char.isdigit() for char in fields[4]):
+            raise ValueError(
+                f"invalid cron expression {value!r}: the day of week field must be '*' or "
+                "day names such as 'mon-fri'. Numbers are rejected because APScheduler "
+                "counts 0 as Monday, so '1-5' would mean tue-sat rather than mon-fri."
+            )
         try:
             CronTrigger.from_crontab(value)
         except ValueError as exc:

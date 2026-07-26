@@ -20,3 +20,6 @@ htmlcov/
 
 # Logs
 logs/
+
+# Scheduled alert run state
+.state/
