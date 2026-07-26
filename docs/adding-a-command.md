@@ -52,7 +52,8 @@ success case, an HTTP error, and an unexpected response shape.
 
 Create `src/aap_chatops/aap_commands/<name>.py`. Every command module
 exposes a `register(client, settings)` function and defines its handler
-inside it, so the handler closes over `client`/`settings`:
+inside it, so the handler closes over `client`/`settings`. Pass a short
+`description` to `@command(...)` — it shows up in `!help`:
 
 ```python
 """!jobstatus command: shows the status of a single job."""
@@ -67,7 +68,7 @@ from aap_chatops.settings import Settings
 def register(client: httpx.AsyncClient, settings: Settings) -> None:
     """Register the !jobstatus command, binding the shared client/settings into the handler."""
 
-    @command("jobstatus")
+    @command("jobstatus", description="Show the status of a job by id")
     async def handle_jobstatus(ctx: CommandContext) -> str:
         job_id = _parse_job_id(ctx.raw_text)
         if job_id is None:
@@ -91,6 +92,10 @@ Keep formatting helpers (`_format_*`) and argument parsing in the same
 file as the command that uses them. If two or more commands need the same
 formatting logic, move it to `aap_commands/shared.py` (see
 `format_count_reply`, used by `!approvals` and `!myjobs`).
+
+`!help` and the unknown-command fallback are both driven by
+`commands.list_commands()`, so a new command with a description is
+automatically listed in `!help` with no further changes needed.
 
 ## 4. Register the command
 

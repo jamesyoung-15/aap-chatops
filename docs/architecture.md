@@ -16,9 +16,9 @@ the handler's reply is posted back to the chat platform.
   (HTTP error, timeout, unexpected response shape). Failures are logged,
   never raised to callers.
 - `aap_commands/` - one module per chat command (`ping.py`,
-  `approvals.py`, `myjobs.py`), plus `shared.py` for formatting helpers
-  used by more than one command. Each module exposes `register(client,
-  settings)`; `__init__.py` calls each one from
+  `approvals.py`, `myjobs.py`, `help.py`), plus `shared.py` for formatting
+  helpers used by more than one command. Each module exposes
+  `register(client, settings)`; `__init__.py` calls each one from
   `register_aap_commands(client, settings)`.
 - `models/` - one file per AAP resource (eg. `workflow_approval.py`), plus
   `base.py` for the generic paginated list envelope.
@@ -39,7 +39,9 @@ the handler's reply is posted back to the chat platform.
    `"approvals"`), or returns `None` if the message isn't a trigger.
 4. A `CommandContext` is built and passed to `commands.dispatch(keyword,
    ctx)`, which looks up the keyword in the module-level `_commands`
-   registry and awaits the handler.
+   registry and awaits the handler. If the keyword isn't registered,
+   `dispatch` returns a fallback message pointing to `!help` instead of
+   calling a handler.
 5. The handler (registered by one of the `aap_commands/` modules) calls
    the matching `aap_client` function using the `httpx.AsyncClient` and
    `Settings` it closed over at registration time.
@@ -48,24 +50,42 @@ the handler's reply is posted back to the chat platform.
 7. The handler formats the result into a plain string reply, handling the
    `None`/empty-result cases with a friendly message.
 8. The reply string is returned up through `dispatch`, and
-   `on_trigger_message` posts it back to the channel via `say()`. If the
-   handler (or `parse_trigger`) returns `None`, no reply is sent.
+   `on_trigger_message` posts it back to the channel via `say()`. If
+   `parse_trigger` returned `None` (not a trigger message at all), no
+   reply is sent.
 
 ## Command registration
 
-`commands.py` holds a single module-level registry:
+`commands.py` holds a single module-level registry, keyed by command
+name, of `CommandInfo` records (handler plus a description used by
+`!help`):
 
 ```python
-_commands: dict[str, CommandHandler] = {}
+@dataclass
+class CommandInfo:
+    name: str
+    description: str
+    handler: CommandHandler
 
 
-def command(name: str):
+_commands: dict[str, CommandInfo] = {}
+
+
+def command(name: str, description: str = ""):
     def decorator(handler):
-        _commands[name] = handler
+        _commands[name] = CommandInfo(
+            name=name, description=description, handler=handler
+        )
         return handler
 
     return decorator
 ```
+
+`list_commands()` returns all registered `CommandInfo` records sorted by
+name; `!help` (`aap_commands/help.py`) uses it to build its reply, and
+`dispatch()` uses the same registry to produce the unknown-command
+fallback message. Both stay in sync with whatever is currently
+registered, with no separate list to maintain.
 
 `aap_commands/__init__.py` calls each command module's `register(client,
 settings)` once at startup:
@@ -75,6 +95,7 @@ def register_aap_commands(client, settings):
     ping.register(client, settings)
     approvals.register(client, settings)
     myjobs.register(client, settings)
+    help_command.register(client, settings)
 ```
 
 Each command module defines its handler inside its own `register`
@@ -82,7 +103,8 @@ function, so the handler closes over the `client`/`settings` passed in at
 registration time. This is the project's dependency injection: no
 framework, no globals beyond the `commands.py` registry itself. Adding a
 new command means adding a new module with a `register` function and one
-line in `aap_commands/__init__.py`.
+line in `aap_commands/__init__.py`; passing a `description` to
+`@command(...)` gets it listed in `!help` automatically.
 
 ## Models
 
