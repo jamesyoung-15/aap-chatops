@@ -13,7 +13,9 @@ async def main() -> None:
     """Entry point that initializes settings and runs program"""
     settings = Settings()
 
-    async with httpx.AsyncClient(headers=settings.aap_api_headers) as client:
+    async with httpx.AsyncClient(
+        headers=settings.aap_api_headers, follow_redirects=True
+    ) as client:
         register_aap_commands(client, settings)
 
         match settings.chat_platform:
