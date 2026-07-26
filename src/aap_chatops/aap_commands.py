@@ -38,7 +38,7 @@ def _format_approval(approval: WorkflowApproval) -> str:
     if expiration is None:
         response_message = f"- {workflow}"
     else:
-        response_message = f"- {workflow} - expires: {expiration})"
+        response_message = f"- {workflow} - expires: {expiration}"
     return response_message
 
 
