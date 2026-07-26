@@ -94,5 +94,5 @@ def _format_workflow_job(job: WorkflowJob, aap_base_url: str) -> str:
 
 
 def _workflow_job_ui_url(aap_base_url: str, job_id: int) -> str:
-    """AAP UI link for a workflow job. No guarantee this will work in future versions of AAP, but it works for now."""
+    """AAP UI link for a workflow job. No guarantee this will work in future versions of AAP."""
     return f"https://{aap_base_url}/jobs/workflow/{job_id}/output"
