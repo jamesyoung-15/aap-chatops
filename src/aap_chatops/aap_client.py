@@ -1,5 +1,6 @@
 """Rest API client for interacting with the AAP API"""
 
+import logging
 from datetime import UTC, datetime
 
 import httpx
@@ -9,6 +10,8 @@ from aap_chatops.models.aap_user import AAPUser
 from aap_chatops.models.base import AapListResponse
 from aap_chatops.models.workflow_approval import WorkflowApproval
 from aap_chatops.models.workflow_job import WorkflowJob
+
+logger = logging.getLogger(__name__)
 
 
 async def get_request(
@@ -23,15 +26,17 @@ async def get_request(
         response.raise_for_status()
         return response
     except httpx.HTTPStatusError as exc:
-        print(
-            f"Error response {exc.response.status_code} while requesting {exc.request.url!r}."
+        logger.warning(
+            "Error response %s while requesting %r.",
+            exc.response.status_code,
+            exc.request.url,
         )
         return None
     except httpx.TimeoutException:
-        print(f"Request to {aap_api_url} timed out.")
+        logger.warning("Request to %s timed out.", aap_api_url)
         return None
     except httpx.RequestError as exc:
-        print(f"An error occurred while requesting {exc.request.url!r}.")
+        logger.warning("An error occurred while requesting %r.", exc.request.url)
         return None
 
 
@@ -46,11 +51,13 @@ async def get_aap_user_info(
     try:
         results = AapListResponse[AAPUser].model_validate(response.json()).results
     except ValueError as exc:
-        print(f"Unexpected response shape from /me/ endpoint: {exc}")
+        logger.error("Unexpected response shape from /me/ endpoint: %s", exc)
         return None
 
     if not results:
-        print("Unexpected response shape from /me/ endpoint: no results returned")
+        logger.error(
+            "Unexpected response shape from /me/ endpoint: no results returned"
+        )
         return None
 
     return results[0]
@@ -78,7 +85,9 @@ async def get_pending_workflow_approvals(
     try:
         return AapListResponse[WorkflowApproval].model_validate(response.json())
     except ValidationError as exc:
-        print(f"Unexpected response shape from workflow_approvals endpoint: {exc}")
+        logger.error(
+            "Unexpected response shape from workflow_approvals endpoint: %s", exc
+        )
         return None
 
 
@@ -105,7 +114,7 @@ async def get_my_workflow_jobs(
     try:
         return AapListResponse[WorkflowJob].model_validate(response.json())
     except ValidationError as exc:
-        print(f"Unexpected response shape from workflow_jobs endpoint: {exc}")
+        logger.error("Unexpected response shape from workflow_jobs endpoint: %s", exc)
         return None
 
 
