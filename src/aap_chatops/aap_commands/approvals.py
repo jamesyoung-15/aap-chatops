@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 import httpx
 
 from aap_chatops.aap_client import get_pending_workflow_approvals
+from aap_chatops.aap_commands.shared import format_count_reply
 from aap_chatops.commands import CommandContext, command
 from aap_chatops.models.workflow_approval import WorkflowApproval
 from aap_chatops.settings import Settings
@@ -21,9 +22,10 @@ def register(client: httpx.AsyncClient, settings: Settings) -> None:
         if not approvals.results:
             return "No pending workflow approvals"
 
-        lines = [f"{approvals.count} pending workflow approval(s):\n"]
-        lines.extend(_format_approval(approval) for approval in approvals.results)
-        return "\n".join(lines)
+        lines = [_format_approval(approval) for approval in approvals.results]
+        return format_count_reply(
+            approvals.count, "pending workflow approval(s)", lines
+        )
 
 
 def _format_approval(approval: WorkflowApproval) -> str:

@@ -3,6 +3,7 @@
 import httpx
 
 from aap_chatops.aap_client import get_my_workflow_jobs
+from aap_chatops.aap_commands.shared import format_count_reply
 from aap_chatops.commands import CommandContext, command
 from aap_chatops.models.workflow_job import WorkflowJob
 from aap_chatops.settings import Settings
@@ -24,11 +25,10 @@ def register(client: httpx.AsyncClient, settings: Settings) -> None:
         if not jobs.results:
             return "No workflow jobs run today"
 
-        lines = [f"{jobs.count} workflow job(s) run today:\n"]
-        lines.extend(
+        lines = [
             _format_workflow_job(job, settings.aap_base_url) for job in jobs.results
-        )
-        return "\n".join(lines)
+        ]
+        return format_count_reply(jobs.count, "workflow job(s) run today", lines)
 
 
 def _format_workflow_job(job: WorkflowJob, aap_base_url: str) -> str:
