@@ -58,10 +58,12 @@ the handler's reply is posted back to the chat platform.
 ```python
 _commands: dict[str, CommandHandler] = {}
 
+
 def command(name: str):
     def decorator(handler):
         _commands[name] = handler
         return handler
+
     return decorator
 ```
 
