@@ -14,7 +14,7 @@ from aap_chatops.settings import Settings
 def register(client: httpx.AsyncClient, settings: Settings) -> None:
     """Register the !approvals command, binding the shared client/settings into the handler."""
 
-    @command("approvals")
+    @command("approvals", description="List pending workflow approvals")
     async def handle_approvals(ctx: CommandContext) -> str:
         approvals = await get_pending_workflow_approvals(client, settings.aap_api_url)
         if approvals is None:

@@ -12,7 +12,7 @@ from aap_chatops.settings import Settings
 def register(client: httpx.AsyncClient, settings: Settings) -> None:
     """Register the !myjobs command, binding the shared client/settings into the handler."""
 
-    @command("myjobs")
+    @command("myjobs", description="List workflow jobs you've run today")
     async def handle_myjobs(ctx: CommandContext) -> str:
         if settings.aap_user is None:
             return "Could not determine your AAP user"
