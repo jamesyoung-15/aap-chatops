@@ -16,10 +16,12 @@ the handler's reply is posted back to the chat platform.
   (HTTP error, timeout, unexpected response shape). Failures are logged,
   never raised to callers.
 - `aap_commands/` - one module per chat command (`ping.py`,
-  `approvals.py`, `myjobs.py`, `help.py`), plus `shared.py` for formatting
-  helpers used by more than one command. Each module exposes
+  `approvals.py`, `myjobs.py`, `help.py`). Each module exposes
   `register(client, settings)`; `__init__.py` calls each one from
   `register_aap_commands(client, settings)`.
+- `formatting.py` - reply-formatting helpers shared by more than one
+  caller. Depends only on `models/`, so anything that renders AAP data can
+  use it without importing the command layer.
 - `models/` - one file per AAP resource (eg. `workflow_approval.py`), plus
   `base.py` for the generic paginated list envelope.
 - `settings.py` - configuration loaded from `.env` via pydantic-settings.

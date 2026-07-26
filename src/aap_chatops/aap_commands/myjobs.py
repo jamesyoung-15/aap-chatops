@@ -3,8 +3,8 @@
 import httpx
 
 from aap_chatops.aap_client import get_my_workflow_jobs
-from aap_chatops.aap_commands.shared import format_count_reply
 from aap_chatops.commands import CommandContext, command
+from aap_chatops.formatting import format_count_reply
 from aap_chatops.models.workflow_job import WorkflowJob
 from aap_chatops.settings import Settings
 
