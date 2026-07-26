@@ -1,0 +1,72 @@
+# SSL certificate verification errors
+
+## Problem
+
+Running this project can fail with an SSL certificate verification error
+(eg. `SSLCertVerificationError: unable to get local issuer certificate`)
+when `slack_bolt` opens its Socket Mode connection. This has been observed
+on two very different machines:
+
+- A company-managed macOS laptop, on the corporate network/VPN.
+- A personal NixOS machine, with no corporate network or VPN involved.
+
+The fix in both cases is the same: call `truststore.inject_into_ssl()`
+before importing `slack_bolt` (see `src/aap_chatops/slack_adapter.py`).
+
+## Root cause
+
+Python's `ssl` module does not use your OS's trust store by default. It
+asks OpenSSL to resolve a CA bundle, which comes from the `SSL_CERT_FILE`/
+`SSL_CERT_DIR` environment variables or a path baked in when OpenSSL was
+compiled. `aiohttp` (used by `slack_bolt`'s Socket Mode client) builds its
+default `SSLContext` from this at import time.
+
+Two different failure modes produce the same symptom:
+
+**Wrong trust store (corporate network).** A TLS-inspecting proxy
+(eg. Zscaler) terminates HTTPS connections and re-signs them with an
+internal CA. The OS trust store is updated to trust that CA (eg. via
+Jamf/MDM), but the CA bundle Python resolves may not include it, so
+certificate verification fails even though the OS itself trusts the
+connection.
+
+**Missing trust store (NixOS).** NixOS does not use the standard Linux
+FHS layout, so there is no guaranteed `/etc/ssl/certs/ca-certificates.crt`.
+This project also uses `uv`, which downloads a standalone prebuilt CPython
+rather than a Nix-packaged one. That build's compiled-in default cert path
+may not exist on NixOS, and if `SSL_CERT_FILE` isn't set for that process,
+OpenSSL has no CA bundle to check against at all.
+
+## Why `truststore` fixes both
+
+`truststore.inject_into_ssl()` replaces `ssl.SSLContext` so that
+certificate verification is delegated to the OS instead of OpenSSL's own
+bundle resolution:
+
+- macOS/Windows: uses native OS trust APIs (Keychain/`Security.framework`
+  on macOS), which already trust anything pushed by MDM.
+- Other platforms (Linux): falls back to probing a list of well-known
+  distro CA bundle paths, which is more resilient than relying on a single
+  compiled-in default.
+
+## Import order matters
+
+`aiohttp` creates its default `SSLContext` once, at module import time.
+`truststore.inject_into_ssl()` only affects `SSLContext` instances created
+after it runs. It must be called before `slack_bolt` (or anything else
+that imports `aiohttp`) is imported, which is why it sits at the top of
+`src/aap_chatops/slack_adapter.py`.
+
+## Related: `SSL_CERT_FILE`
+
+Many corporate environments also require exporting `SSL_CERT_FILE` (or
+tool-specific equivalents like `REQUESTS_CA_BUNDLE`, `NODE_EXTRA_CA_CERTS`)
+pointing at a company-provided CA bundle. This solves the same class of
+problem as the corporate-network case above, but explicitly: it tells a
+tool exactly which file to trust, rather than delegating to the OS trust
+store the way `truststore` does. It does not help the NixOS case, since
+the problem there is a missing bundle rather than a wrong one.
+
+## References
+
+<!-- links on Python 3.13+ prevalence to be added -->
