@@ -34,11 +34,7 @@ def register_aap_commands(client: httpx.AsyncClient, settings: Settings) -> None
 def _format_approval(approval: WorkflowApproval) -> str:
     """Render a single workflow approval as a bulleted Slack message line."""
     workflow = approval.workflow_name or "unknown workflow"
-    creator = (
-        approval.summary_fields.created_by.username
-        if approval.summary_fields.created_by
-        else "unknown user"
-    )
+    creator = approval.created_by_username or "unknown user"
     expiration = _format_expiration(approval.approval_expiration)
     if expiration is None:
         response_message = f"- {workflow} - created by {creator}"
