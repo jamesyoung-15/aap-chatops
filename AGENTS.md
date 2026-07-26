@@ -21,6 +21,8 @@ AAP ChatOps acts as a bridge between chat platforms (eg. Slack) and Ansible Auto
 
 Commands are registered via a decorator-based registry (`commands.py`) and dispatched by trigger keyword (eg. `!ping`). Each AAP-backed command lives in its own module under `aap_commands/`, exposing a `register(client, settings)` function that closes over the shared HTTP client and settings object rather than using a DI framework. See `docs/architecture.md` for details, and `docs/testing.md` for test conventions.
 
+See `docs/adding-a-command.md` for a step-by-step guide to adding a new command.
+
 ## Coding Standards
 
 ### Python Standards
