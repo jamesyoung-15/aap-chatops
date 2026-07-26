@@ -1,14 +1,5 @@
-import pytest
-
 from aap_chatops import commands
 from aap_chatops.commands import CommandContext, parse_trigger
-
-
-@pytest.fixture(autouse=True)
-def _clear_registry():
-    commands._commands.clear()
-    yield
-    commands._commands.clear()
 
 
 def test_parse_trigger_returns_keyword():

@@ -1,14 +1,5 @@
-import pytest
-
 from aap_chatops import commands
 from aap_chatops.slack_adapter import handle_trigger_message
-
-
-@pytest.fixture(autouse=True)
-def _clear_registry():
-    commands._commands.clear()
-    yield
-    commands._commands.clear()
 
 
 async def test_handle_trigger_message_dispatches_registered_command():
