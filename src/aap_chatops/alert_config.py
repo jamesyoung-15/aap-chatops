@@ -6,7 +6,6 @@ going unnoticed until the alert was supposed to fire.
 """
 
 import logging
-import re
 from dataclasses import dataclass
 from datetime import timedelta
 from pathlib import Path
@@ -19,16 +18,6 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_valida
 from aap_chatops.alerts import AlertTaskInfo, get_alert_task, list_alert_tasks
 
 logger = logging.getLogger(__name__)
-
-# APScheduler numbers days of the week from 0=Monday, while standard cron uses
-# 0=Sunday, and `from_crontab` does not translate between them. A numeric field is
-# therefore silently off by one: "1-5" schedules Tue-Sat. Names are unambiguous, so
-# require them and reject anything else outright.
-_DAY_NAMES = r"(mon|tue|wed|thu|fri|sat|sun)"
-_DAY_OF_WEEK = re.compile(
-    rf"^(\*|{_DAY_NAMES}(-{_DAY_NAMES})?(,{_DAY_NAMES}(-{_DAY_NAMES})?)*)$",
-    re.IGNORECASE,
-)
 
 
 class AlertConfigError(ValueError):
@@ -51,13 +40,16 @@ class AlertEntry(BaseModel):
     @field_validator("cron")
     @classmethod
     def _validate_cron(cls, value: str) -> str:
-        """Let APScheduler be both the parser and the validator for cron syntax."""
+        """Let APScheduler parse the expression, but reject its day of week footgun first."""
         fields = value.split()
         if len(fields) != 5:
             raise ValueError(
                 f"invalid cron expression {value!r}: expected 5 fields, got {len(fields)}"
             )
-        if not _DAY_OF_WEEK.match(fields[4]):
+        # APScheduler numbers days from 0=Monday while cron uses 0=Sunday, and
+        # from_crontab does not translate, so "1-5" silently means tue-sat. Names are
+        # unambiguous, and from_crontab rejects misspelled ones on its own.
+        if any(char.isdigit() for char in fields[4]):
             raise ValueError(
                 f"invalid cron expression {value!r}: the day of week field must be '*' or "
                 "day names such as 'mon-fri'. Numbers are rejected because APScheduler "

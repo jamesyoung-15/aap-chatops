@@ -89,7 +89,7 @@ async def run_due_alert(
 ) -> None:
     """APScheduler job body: work out which occurrence this run is for, then run it."""
     now = _utc_now()
-    lookback = max(alert.catchup or OCCURRENCE_LOOKBACK, OCCURRENCE_LOOKBACK)
+    lookback = max(alert.catchup or timedelta(0), OCCURRENCE_LOOKBACK)
     fire_time = most_recent_fire_time(alert.trigger, now, lookback) or now
     await run_scheduled_alert(alert, post, state, fire_time)
 
