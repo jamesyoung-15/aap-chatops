@@ -1,5 +1,6 @@
 """Slack Socket Mode adapter: connects incoming Slack messages to the command registry."""
 
+import asyncio
 import re
 
 import truststore
@@ -10,49 +11,51 @@ import truststore
 # (or anything else that opens an HTTPS/websocket connection) is imported.
 truststore.inject_into_ssl()
 
-from slack_bolt import App
-from slack_bolt.adapter.socket_mode import SocketModeHandler
+from slack_bolt.adapter.socket_mode.aiohttp import AsyncSocketModeHandler
+from slack_bolt.app.async_app import AsyncApp
 
 from aap_chatops.commands import CommandContext, dispatch, parse_trigger
 from aap_chatops.settings import Settings
 
 
-def handle_trigger_message(text: str, user_id: str, channel_id: str) -> str | None:
+async def handle_trigger_message(
+    text: str, user_id: str, channel_id: str
+) -> str | None:
     """Parse a Slack message and return the reply text, or None if there's nothing to send."""
     keyword = parse_trigger(text)
     if keyword is None:
         return None
     ctx = CommandContext(user_id=user_id, channel_id=channel_id, raw_text=text)
-    return dispatch(keyword, ctx)
+    return await dispatch(keyword, ctx)
 
 
-def build_app(settings: Settings) -> App:
+def build_app(settings: Settings) -> AsyncApp:
     """Construct the Bolt app and register the trigger-message listener."""
-    app = App(token=settings.slack_bot_token)
+    app = AsyncApp(token=settings.slack_bot_token)
 
     @app.message(re.compile(r"^!"))
-    def on_trigger_message(message, say):
-        reply = handle_trigger_message(
+    async def on_trigger_message(message, say):
+        reply = await handle_trigger_message(
             text=message["text"],
             user_id=message["user"],
             channel_id=message["channel"],
         )
         if reply is not None:
-            say(reply)
+            await say(reply)
 
     return app
 
 
-def start(settings: Settings | None = None) -> None:
+async def start(settings: Settings | None = None) -> None:
     """Connect over Socket Mode and block until interrupted, then disconnect cleanly."""
     settings = settings or Settings()
     app = build_app(settings)
-    handler = SocketModeHandler(app, settings.slack_app_token)
+    handler = AsyncSocketModeHandler(app, settings.slack_app_token)
     try:
-        handler.start()
+        await handler.start_async()
     finally:
-        handler.close()
+        await handler.close_async()
 
 
 if __name__ == "__main__":
-    start()
+    asyncio.run(start())

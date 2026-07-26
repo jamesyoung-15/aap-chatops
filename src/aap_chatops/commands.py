@@ -1,9 +1,9 @@
 """Chat-platform-agnostic trigger command registry and dispatch."""
 
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 
-CommandHandler = Callable[["CommandContext"], str]
+CommandHandler = Callable[["CommandContext"], Awaitable[str]]
 
 _commands: dict[str, CommandHandler] = {}
 
@@ -35,9 +35,9 @@ def command(name: str) -> Callable[[CommandHandler], CommandHandler]:
     return decorator
 
 
-def dispatch(name: str, ctx: CommandContext) -> str | None:
+async def dispatch(name: str, ctx: CommandContext) -> str | None:
     """Call the handler registered for `name`, or return None if there isn't one."""
     handler = _commands.get(name)
     if handler is None:
         return None
-    return handler(ctx)
+    return await handler(ctx)
