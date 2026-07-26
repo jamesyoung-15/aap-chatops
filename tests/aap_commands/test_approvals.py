@@ -2,7 +2,8 @@ from datetime import UTC, datetime, timedelta
 
 import httpx
 
-from aap_chatops.aap_commands import _format_expiration, register_aap_commands
+from aap_chatops.aap_commands import register_aap_commands
+from aap_chatops.aap_commands.approvals import _format_expiration
 from aap_chatops.commands import CommandContext, dispatch
 
 
