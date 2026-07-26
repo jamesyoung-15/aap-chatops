@@ -5,8 +5,6 @@ from dataclasses import dataclass
 
 CommandHandler = Callable[["CommandContext"], Awaitable[str]]
 
-_commands: dict[str, CommandHandler] = {}
-
 
 @dataclass
 class CommandContext:
@@ -17,6 +15,18 @@ class CommandContext:
     raw_text: str
 
 
+@dataclass
+class CommandInfo:
+    """A registered command's handler plus metadata for eg. !help."""
+
+    name: str
+    description: str
+    handler: CommandHandler
+
+
+_commands: dict[str, CommandInfo] = {}
+
+
 def parse_trigger(text: str) -> str | None:
     """Return the command keyword if `text` is a trigger message, else None."""
     if not text.startswith("!"):
@@ -25,19 +35,28 @@ def parse_trigger(text: str) -> str | None:
     return parts[0].lower() if parts else None
 
 
-def command(name: str) -> Callable[[CommandHandler], CommandHandler]:
+def command(
+    name: str, description: str = ""
+) -> Callable[[CommandHandler], CommandHandler]:
     """Register `name` (without the leading "!") as a trigger for the decorated handler."""
 
     def decorator(handler: CommandHandler) -> CommandHandler:
-        _commands[name] = handler
+        _commands[name] = CommandInfo(
+            name=name, description=description, handler=handler
+        )
         return handler
 
     return decorator
 
 
-async def dispatch(name: str, ctx: CommandContext) -> str | None:
-    """Call the handler registered for `name`, or return None if there isn't one."""
-    handler = _commands.get(name)
-    if handler is None:
-        return None
-    return await handler(ctx)
+def list_commands() -> list[CommandInfo]:
+    """Registered commands, sorted alphabetically by name."""
+    return sorted(_commands.values(), key=lambda info: info.name)
+
+
+async def dispatch(name: str, ctx: CommandContext) -> str:
+    """Call the handler registered for `name`, or return a fallback message if unknown."""
+    info = _commands.get(name)
+    if info is None:
+        return f"Unknown command: !{name}. Try !help for a list of commands."
+    return await info.handler(ctx)

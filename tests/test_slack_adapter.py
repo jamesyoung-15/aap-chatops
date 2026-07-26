@@ -18,5 +18,6 @@ async def test_handle_trigger_message_returns_none_for_non_trigger_text():
     )
 
 
-async def test_handle_trigger_message_returns_none_for_unknown_command():
-    assert await handle_trigger_message("!nope", user_id="U1", channel_id="C1") is None
+async def test_handle_trigger_message_returns_fallback_for_unknown_command():
+    reply = await handle_trigger_message("!nope", user_id="U1", channel_id="C1")
+    assert reply == "Unknown command: !nope. Try !help for a list of commands."

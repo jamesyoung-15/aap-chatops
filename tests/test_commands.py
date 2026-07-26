@@ -31,6 +31,29 @@ async def test_dispatch_calls_registered_handler():
     assert await commands.dispatch("ping", ctx) == "pong to U1"
 
 
-async def test_dispatch_returns_none_for_unknown_command():
+async def test_dispatch_returns_fallback_message_for_unknown_command():
     ctx = CommandContext(user_id="U1", channel_id="C1", raw_text="!nope")
-    assert await commands.dispatch("nope", ctx) is None
+    reply = await commands.dispatch("nope", ctx)
+    assert reply == "Unknown command: !nope. Try !help for a list of commands."
+
+
+def test_list_commands_returns_sorted_by_name():
+    @commands.command("zeta")
+    async def handle_zeta(ctx: CommandContext) -> str:
+        return "z"
+
+    @commands.command("alpha", description="First command")
+    async def handle_alpha(ctx: CommandContext) -> str:
+        return "a"
+
+    names = [info.name for info in commands.list_commands()]
+    assert names == ["alpha", "zeta"]
+
+
+def test_list_commands_includes_description():
+    @commands.command("alpha", description="First command")
+    async def handle_alpha(ctx: CommandContext) -> str:
+        return "a"
+
+    infos = commands.list_commands()
+    assert infos[0].description == "First command"
