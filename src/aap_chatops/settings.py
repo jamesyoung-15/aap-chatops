@@ -34,6 +34,10 @@ class Settings(BaseSettings):
     # reused by commands that need to know who's calling (eg. !myjobs).
     aap_user: AAPUser | None = Field(default=None, exclude=True)
 
+    log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = Field(
+        default="INFO", description="Logging verbosity"
+    )
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
     @model_validator(mode="after")
