@@ -12,10 +12,20 @@ class WorkflowJobSummary(BaseModel):
     name: str
 
 
+class WorkflowCreatedBySummary(BaseModel):
+    """Subset of `summary_fields.created_by` on a workflow approval."""
+
+    id: int
+    username: str
+    first_name: str | None = None
+    last_name: str | None = None
+
+
 class WorkflowApprovalSummaryFields(BaseModel):
     """Subset of `summary_fields` on a workflow approval we care about."""
 
     workflow_job: WorkflowJobSummary | None = None
+    created_by: WorkflowCreatedBySummary | None = None
 
 
 class WorkflowApproval(BaseModel):
