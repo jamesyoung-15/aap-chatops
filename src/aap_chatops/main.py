@@ -6,6 +6,7 @@ import httpx
 
 from aap_chatops.aap_client import get_aap_user_info
 from aap_chatops.aap_commands import register_aap_commands
+from aap_chatops.logging_config import configure_logging
 from aap_chatops.settings import Settings
 from aap_chatops.slack_adapter import start_slack
 
@@ -13,6 +14,7 @@ from aap_chatops.slack_adapter import start_slack
 async def main() -> None:
     """Entry point that initializes settings and runs program"""
     settings = Settings()
+    configure_logging(settings)
 
     async with httpx.AsyncClient(
         headers=settings.aap_api_headers, follow_redirects=True
