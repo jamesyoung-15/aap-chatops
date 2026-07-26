@@ -2,16 +2,18 @@
 
 import pytest
 
-from aap_chatops import commands
+from aap_chatops import alerts, commands
 from aap_chatops.settings import Settings
 
 
 @pytest.fixture(autouse=True)
-def _clear_registry():
-    """Ensure the global command registry is empty before and after each test."""
+def _clear_registries():
+    """Ensure the global command and alert registries are empty around each test."""
     commands._commands.clear()
+    alerts._tasks.clear()
     yield
     commands._commands.clear()
+    alerts._tasks.clear()
 
 
 @pytest.fixture

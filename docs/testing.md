@@ -24,8 +24,9 @@ to import as a top-level module named `test_ping`).
 
 ## Fixtures (`tests/conftest.py`)
 
-- `_clear_registry` (autouse) - clears the global `commands._commands`
-  dict before and after every test, since it's shared mutable state.
+- `_clear_registries` (autouse) - clears the global `commands._commands`
+  and `alerts._tasks` dicts before and after every test, since both are
+  shared mutable state.
 - `make_settings` - factory fixture returning a `Settings` builder with
   sane defaults, passing `_env_file=None` so tests never read the
   developer's real `.env`.
