@@ -18,6 +18,8 @@ Note: This project has only been tested on AAP 2.6 with controller API V2. V1 ap
 - Access to AAP API
 - AAP Account API token
 - [`uv`](https://docs.astral.sh/uv/getting-started/)
+- Chat Platform Setup:
+  - Slack (app + bot tokens) - requires app with socket mode enabled, see [setup instructions](https://docs.slack.dev/apis/events-api/using-socket-mode/)
 
 ### Installation
 
