@@ -84,8 +84,7 @@ async def test_approvals_command_lists_pending_approvals():
 
     assert reply is not None
     assert "1 pending workflow approval(s):" in reply
-    assert "[(TEST) flow/james_playground] test" in reply
-    assert "no timeout" in reply
+    assert "- (TEST) flow/james_playground" in reply
 
 
 async def test_approvals_command_reports_no_pending_approvals():

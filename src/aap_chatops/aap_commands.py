@@ -5,8 +5,8 @@ from datetime import UTC, datetime
 import httpx
 
 from aap_chatops.aap_client import get_pending_workflow_approvals, ping_aap_api
-from aap_chatops.aap_models import WorkflowApproval
 from aap_chatops.commands import CommandContext, command
+from aap_chatops.models.workflow_approval import WorkflowApproval
 from aap_chatops.settings import Settings
 
 

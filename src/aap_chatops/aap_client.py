@@ -3,7 +3,8 @@
 import httpx
 from pydantic import ValidationError
 
-from aap_chatops.aap_models import WorkflowApprovalListResponse
+from aap_chatops.models.base import AapListResponse
+from aap_chatops.models.workflow_approval import WorkflowApproval
 
 
 async def get_request(
@@ -38,7 +39,7 @@ async def ping_aap_api(httpx_client: httpx.AsyncClient, aap_api_url: str) -> boo
 
 async def get_pending_workflow_approvals(
     httpx_client: httpx.AsyncClient, aap_api_url: str
-) -> WorkflowApprovalListResponse | None:
+) -> AapListResponse[WorkflowApproval] | None:
     """Fetch the first page of pending workflow approvals, most recently modified first."""
 
     response = await get_request(
@@ -50,7 +51,7 @@ async def get_pending_workflow_approvals(
         return None
 
     try:
-        return WorkflowApprovalListResponse.model_validate(response.json())
+        return AapListResponse[WorkflowApproval].model_validate(response.json())
     except ValidationError as exc:
         print(f"Unexpected response shape from workflow_approvals endpoint: {exc}")
         return None

@@ -1,4 +1,4 @@
-"""Pydantic models representing AAP API response shapes."""
+"""Models for the AAP `/workflow_approvals/` endpoint."""
 
 from datetime import datetime
 
@@ -37,12 +37,3 @@ class WorkflowApproval(BaseModel):
         """Name of the workflow job this approval node belongs to, if known."""
         workflow_job = self.summary_fields.workflow_job
         return workflow_job.name if workflow_job else None
-
-
-class WorkflowApprovalListResponse(BaseModel):
-    """The paginated envelope returned by the `/workflow_approvals/` list endpoint."""
-
-    count: int
-    next: str | None = None
-    previous: str | None = None
-    results: list[WorkflowApproval]

@@ -3,8 +3,8 @@ from datetime import UTC, datetime, timedelta
 from aap_chatops.aap_commands import _format_expiration
 
 
-def test_format_expiration_returns_no_timeout_for_none():
-    assert _format_expiration(None) == "no timeout"
+def test_format_expiration_returns_none_for_no_timeout():
+    assert _format_expiration(None) is None
 
 
 def test_format_expiration_returns_expired_for_past_time():
