@@ -1,10 +1,14 @@
 """Rest API client for interacting with the AAP API"""
 
+from datetime import UTC, datetime
+
 import httpx
 from pydantic import ValidationError
 
+from aap_chatops.models.aap_user import AAPUser
 from aap_chatops.models.base import AapListResponse
 from aap_chatops.models.workflow_approval import WorkflowApproval
+from aap_chatops.models.workflow_job import WorkflowJob
 
 
 async def get_request(
@@ -31,6 +35,27 @@ async def get_request(
         return None
 
 
+async def get_aap_user_info(
+    httpx_client: httpx.AsyncClient, aap_api_url: str
+) -> AAPUser | None:
+    """Fetch the current user's info from the AAP API."""
+    response = await get_request(httpx_client, f"{aap_api_url}/me/")
+    if response is None:
+        return None
+
+    try:
+        results = AapListResponse[AAPUser].model_validate(response.json()).results
+    except ValueError as exc:
+        print(f"Unexpected response shape from /me/ endpoint: {exc}")
+        return None
+
+    if not results:
+        print("Unexpected response shape from /me/ endpoint: no results returned")
+        return None
+
+    return results[0]
+
+
 async def ping_aap_api(httpx_client: httpx.AsyncClient, aap_api_url: str) -> bool:
     """Ping an AAP API endpoint to check if it's reachable"""
 
@@ -55,3 +80,55 @@ async def get_pending_workflow_approvals(
     except ValidationError as exc:
         print(f"Unexpected response shape from workflow_approvals endpoint: {exc}")
         return None
+
+
+async def get_my_workflow_jobs(
+    httpx_client: httpx.AsyncClient, aap_api_url: str, user_id: int
+) -> AapListResponse[WorkflowJob] | None:
+    """Fetch the first page of today's workflow jobs created by `user_id`."""
+
+    start_of_today = datetime.now(UTC).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+    response = await get_request(
+        httpx_client,
+        f"{aap_api_url}/workflow_jobs/",
+        params={
+            "order_by": "-modified",
+            "created_by__id": str(user_id),
+            "created__gt": start_of_today.isoformat(),
+        },
+    )
+    if response is None:
+        return None
+
+    try:
+        return AapListResponse[WorkflowJob].model_validate(response.json())
+    except ValidationError as exc:
+        print(f"Unexpected response shape from workflow_jobs endpoint: {exc}")
+        return None
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    from aap_chatops.settings import Settings
+
+    settings = Settings()
+
+    async def main():
+        async with httpx.AsyncClient(
+            headers=settings.aap_api_headers, follow_redirects=True
+        ) as client:
+            aap_api_url = (
+                "https://amfam-aap.apps.dall-oc-001-prd.ent.corp/api/controller/v2"
+            )
+            user_info = await get_aap_user_info(client, aap_api_url)
+            if not user_info:
+                print("Failed to fetch user info from AAP API")
+            else:
+                print(
+                    f"User info: {user_info.id}, {user_info.username}, {user_info.email}"
+                )
+
+    asyncio.run(main())

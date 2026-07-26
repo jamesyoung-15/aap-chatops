@@ -5,6 +5,8 @@ from typing import Literal
 from pydantic import Field, computed_field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from aap_chatops.models.aap_user import AAPUser
+
 
 class Settings(BaseSettings):
     """User configurations for project such as API tokens"""
@@ -27,6 +29,10 @@ class Settings(BaseSettings):
         default=None,
         description="Slack account token used to authenticate socket mode connections",
     )
+
+    # Runtime-only cache, not sourced from env; populated once at startup and
+    # reused by commands that need to know who's calling (eg. !myjobs).
+    aap_user: AAPUser | None = Field(default=None, exclude=True)
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

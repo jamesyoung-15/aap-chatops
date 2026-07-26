@@ -53,3 +53,41 @@ def make_approval_payload():
         return payload
 
     return _make_approval_payload
+
+
+@pytest.fixture
+def make_workflow_job_payload():
+    """Factory fixture for building a raw `/workflow_jobs/` result item payload."""
+
+    def _make_workflow_job_payload(**overrides) -> dict:
+        payload = {
+            "id": 70487,
+            "name": "(TEST) flow/james_playground",
+            "status": "running",
+            "created": "2026-07-26T04:09:27.124567Z",
+            "started": "2026-07-26T04:09:27.340787Z",
+            "finished": None,
+            "elapsed": 5708.179127,
+        }
+        payload.update(overrides)
+        return payload
+
+    return _make_workflow_job_payload
+
+
+@pytest.fixture
+def make_aap_user_payload():
+    """Factory fixture for building a raw `/me/` result item payload."""
+
+    def _make_aap_user_payload(**overrides) -> dict:
+        payload = {
+            "id": 23,
+            "username": "YoungJamesY",
+            "first_name": "James",
+            "last_name": "Young",
+            "email": "James.Young@amfam.com",
+        }
+        payload.update(overrides)
+        return payload
+
+    return _make_aap_user_payload
