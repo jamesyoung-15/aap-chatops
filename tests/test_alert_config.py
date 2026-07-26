@@ -1,6 +1,7 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
 from pathlib import Path
 from textwrap import dedent
+from zoneinfo import ZoneInfo
 
 import pytest
 
@@ -39,7 +40,7 @@ def resolve(config: AlertConfig, **overrides):
 
 
 def make_config(**overrides) -> AlertConfig:
-    entry = {"task": "digest", "cron": "0 10 * * 1-5", **overrides}
+    entry = {"task": "digest", "cron": "0 10 * * mon-fri", **overrides}
     return AlertConfig.model_validate({"alerts": [entry]})
 
 
@@ -49,7 +50,7 @@ def test_load_alert_config_parses_a_valid_file(tmp_path):
         """
         alerts:
           - task: digest
-            cron: "0 10 * * 1-5"
+            cron: "0 10 * * mon-fri"
             catchup_minutes: 360
         """,
     )
@@ -85,7 +86,7 @@ def test_load_alert_config_raises_for_an_unknown_key(tmp_path):
         """
         alerts:
           - task: digest
-            cron: "0 10 * * 1-5"
+            cron: "0 10 * * mon-fri"
             catchup_mintues: 360
         """,
     )
@@ -106,13 +107,68 @@ def test_load_alert_config_raises_for_a_bad_cron_expression(tmp_path):
         load_alert_config(path)
 
 
-def test_load_alert_config_raises_for_an_unknown_timezone(tmp_path):
+def test_load_alert_config_rejects_a_numeric_day_of_week(tmp_path):
+    """APScheduler counts 0 as Monday, so "1-5" would silently mean tue-sat."""
     path = write_config(
         tmp_path,
         """
         alerts:
           - task: digest
             cron: "0 10 * * 1-5"
+        """,
+    )
+    with pytest.raises(AlertConfigError, match="day of week"):
+        load_alert_config(path)
+
+
+def test_load_alert_config_raises_for_the_wrong_field_count(tmp_path):
+    path = write_config(
+        tmp_path,
+        """
+        alerts:
+          - task: digest
+            cron: "0 10 * *"
+        """,
+    )
+    with pytest.raises(AlertConfigError, match="expected 5 fields"):
+        load_alert_config(path)
+
+
+@pytest.mark.parametrize("day_of_week", ["*", "mon-fri", "MON-FRI", "mon,wed,fri"])
+def test_load_alert_config_accepts_named_days(tmp_path, day_of_week):
+    path = write_config(
+        tmp_path,
+        f"""
+        alerts:
+          - task: digest
+            cron: "0 10 * * {day_of_week}"
+        """,
+    )
+    assert len(load_alert_config(path).alerts) == 1
+
+
+def test_named_weekday_cron_actually_fires_monday_to_friday(registered_task):
+    """Regression guard for the numeric day of week trap: assert the real weekdays."""
+    resolved = resolve(make_config(cron="0 10 * * mon-fri"))
+    trigger = resolved[0].trigger
+
+    fired = []
+    moment = datetime(2026, 7, 26, tzinfo=ZoneInfo(TIMEZONE))  # a Sunday
+    for _ in range(5):
+        moment = trigger.get_next_fire_time(None, moment)
+        fired.append(moment.weekday())
+        moment += timedelta(minutes=1)
+
+    assert fired == [0, 1, 2, 3, 4]  # Monday through Friday
+
+
+def test_load_alert_config_raises_for_an_unknown_timezone(tmp_path):
+    path = write_config(
+        tmp_path,
+        """
+        alerts:
+          - task: digest
+            cron: "0 10 * * mon-fri"
             timezone: America/Chicaco
         """,
     )
@@ -126,7 +182,7 @@ def test_load_alert_config_raises_for_a_non_positive_catchup(tmp_path):
         """
         alerts:
           - task: digest
-            cron: "0 10 * * 1-5"
+            cron: "0 10 * * mon-fri"
             catchup_minutes: 0
         """,
     )
@@ -153,7 +209,7 @@ def test_resolve_alerts_uses_the_entry_channel_over_the_default(registered_task)
 
 def test_resolve_alerts_raises_for_an_unknown_task(registered_task):
     config = AlertConfig.model_validate(
-        {"alerts": [{"task": "nope", "cron": "0 10 * * 1-5"}]}
+        {"alerts": [{"task": "nope", "cron": "0 10 * * mon-fri"}]}
     )
     with pytest.raises(AlertConfigError, match="Unknown alert task 'nope'"):
         resolve(config)
@@ -161,7 +217,7 @@ def test_resolve_alerts_raises_for_an_unknown_task(registered_task):
 
 def test_unknown_task_error_lists_registered_tasks(registered_task):
     config = AlertConfig.model_validate(
-        {"alerts": [{"task": "nope", "cron": "0 10 * * 1-5"}]}
+        {"alerts": [{"task": "nope", "cron": "0 10 * * mon-fri"}]}
     )
     with pytest.raises(AlertConfigError, match="Registered tasks: digest"):
         resolve(config)
@@ -177,7 +233,7 @@ def test_resolve_alerts_skips_disabled_entries(registered_task):
 
 
 def test_resolve_alerts_raises_for_duplicate_entries(registered_task):
-    entry = {"task": "digest", "cron": "0 10 * * 1-5"}
+    entry = {"task": "digest", "cron": "0 10 * * mon-fri"}
     config = AlertConfig.model_validate({"alerts": [entry, dict(entry)]})
     with pytest.raises(AlertConfigError, match="Duplicate alert entry"):
         resolve(config)
@@ -187,8 +243,8 @@ def test_resolve_alerts_allows_one_task_on_several_schedules(registered_task):
     config = AlertConfig.model_validate(
         {
             "alerts": [
-                {"task": "digest", "cron": "0 10 * * 1-5"},
-                {"task": "digest", "cron": "0 16 * * 1-5"},
+                {"task": "digest", "cron": "0 10 * * mon-fri"},
+                {"task": "digest", "cron": "0 16 * * mon-fri"},
             ]
         }
     )
@@ -201,8 +257,8 @@ def test_resolve_alerts_allows_one_task_on_several_channels(registered_task):
     config = AlertConfig.model_validate(
         {
             "alerts": [
-                {"task": "digest", "cron": "0 10 * * 1-5", "channel": "C0ONE"},
-                {"task": "digest", "cron": "0 10 * * 1-5", "channel": "C0TWO"},
+                {"task": "digest", "cron": "0 10 * * mon-fri", "channel": "C0ONE"},
+                {"task": "digest", "cron": "0 10 * * mon-fri", "channel": "C0TWO"},
             ]
         }
     )
