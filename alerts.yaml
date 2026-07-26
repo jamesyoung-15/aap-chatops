@@ -1,0 +1,16 @@
+# Schedules for the alert tasks registered in src/aap_chatops/aap_alerts/.
+#
+# Per entry:
+#   task            required, name of a registered alert task
+#   cron            required, standard 5 field cron expression
+#   timezone        optional, IANA name, defaults to the alert_timezone setting
+#   channel         optional, Slack channel id, defaults to the
+#                   default_alert_channel_id setting
+#   catchup_minutes optional, re-run a missed occurrence if it is less than this
+#                   stale. Omit to drop missed runs entirely.
+#   enabled         optional, defaults to true
+
+alerts:
+  - task: pending_approvals
+    cron: "0 10 * * 1-5"
+    catchup_minutes: 360
