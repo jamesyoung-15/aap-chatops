@@ -28,6 +28,17 @@ class WorkflowApprovalSummaryFields(BaseModel):
     created_by: WorkflowCreatedBySummary | None = None
 
 
+class WorkflowApprovalRelated(BaseModel):
+    """
+    Subset of `related` on a workflow approval we care about.
+    These give the subpaths to the API endpoints.
+    """
+
+    source_workflow_job: str | None = None
+    approve: str | None = None
+    deny: str | None = None
+
+
 class WorkflowApproval(BaseModel):
     """A single item from the `/workflow_approvals/` list endpoint."""
 
@@ -41,6 +52,7 @@ class WorkflowApproval(BaseModel):
     summary_fields: WorkflowApprovalSummaryFields = Field(
         default_factory=WorkflowApprovalSummaryFields
     )
+    related: WorkflowApprovalRelated = Field(default_factory=WorkflowApprovalRelated)
 
     @property
     def workflow_name(self) -> str | None:
