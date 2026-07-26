@@ -11,8 +11,14 @@ AAP ChatOps acts as a bridge between chat platforms (eg. Slack) and Ansible Auto
 ### Project Structure
 
 - `src/aap_chatops` - library code
-- `tests` - unit tests
+  - `models/` - pydantic models for AAP API resources
+- `tests` - unit tests, mirrors `src/aap_chatops` structure
 - `docs` - documentation
+- `scripts` - operational helper scripts (eg. running the bot in tmux)
+
+### Architecture
+
+Commands are registered via a decorator-based registry (`commands.py`) and dispatched by trigger keyword (eg. `!ping`). AAP-specific handlers (`aap_commands.py`) close over a shared HTTP client and settings object rather than using a DI framework. See `docs/architecture.md` for details, and `docs/testing.md` for test conventions.
 
 ## Coding Standards
 
