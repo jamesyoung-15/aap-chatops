@@ -12,7 +12,8 @@ AAP ChatOps acts as a bridge between chat platforms (eg. Slack) and Ansible Auto
 
 - `src/aap_chatops` - library code
   - `models/` - pydantic models for AAP API resources
-  - `aap_commands/` - one module per chat command, plus shared formatting helpers
+  - `aap_commands/` - one module per chat command
+  - `formatting.py` - reply-formatting helpers shared by more than one caller
 - `tests` - unit tests, mirrors `src/aap_chatops` structure
 - `docs` - documentation
 - `scripts` - operational helper scripts (eg. running the bot in tmux)

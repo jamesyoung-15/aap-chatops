@@ -89,8 +89,8 @@ def _parse_job_id(raw_text: str) -> int | None:
 ```
 
 Keep formatting helpers (`_format_*`) and argument parsing in the same
-file as the command that uses them. If two or more commands need the same
-formatting logic, move it to `aap_commands/shared.py` (see
+file as the command that uses them. If something outside the command needs
+the same formatting logic, move it to `formatting.py` (see
 `format_count_reply`, used by `!approvals` and `!myjobs`).
 
 `!help` and the unknown-command fallback are both driven by
