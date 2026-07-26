@@ -49,6 +49,7 @@ class WorkflowApproval(BaseModel):
     approval_expiration: datetime | None = None
     can_approve_or_deny: bool
     timed_out: bool
+    url: str | None = None
     summary_fields: WorkflowApprovalSummaryFields = Field(
         default_factory=WorkflowApprovalSummaryFields
     )
