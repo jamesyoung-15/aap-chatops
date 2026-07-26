@@ -15,8 +15,11 @@ the handler's reply is posted back to the chat platform.
   Each function returns a parsed pydantic model, or `None` on any failure
   (HTTP error, timeout, unexpected response shape). Failures are logged,
   never raised to callers.
-- `aap_commands.py` - registers AAP-backed commands into the registry from
-  `commands.py`, and formats `aap_client` results into chat replies.
+- `aap_commands/` - one module per chat command (`ping.py`,
+  `approvals.py`, `myjobs.py`), plus `shared.py` for formatting helpers
+  used by more than one command. Each module exposes `register(client,
+  settings)`; `__init__.py` calls each one from
+  `register_aap_commands(client, settings)`.
 - `models/` - one file per AAP resource (eg. `workflow_approval.py`), plus
   `base.py` for the generic paginated list envelope.
 - `settings.py` - configuration loaded from `.env` via pydantic-settings.
@@ -37,7 +40,7 @@ the handler's reply is posted back to the chat platform.
 4. A `CommandContext` is built and passed to `commands.dispatch(keyword,
    ctx)`, which looks up the keyword in the module-level `_commands`
    registry and awaits the handler.
-5. The handler (registered by `aap_commands.register_aap_commands`) calls
+5. The handler (registered by one of the `aap_commands/` modules) calls
    the matching `aap_client` function using the `httpx.AsyncClient` and
    `Settings` it closed over at registration time.
 6. `aap_client` issues the HTTP request and parses the JSON response into
@@ -62,11 +65,22 @@ def command(name: str):
     return decorator
 ```
 
-`aap_commands.register_aap_commands(client, settings)` is called once at
-startup and defines each handler inside that function, so every handler
-closes over the same `client`/`settings` instances by lexical scope. This
-is the project's dependency injection: no framework, no globals beyond the
-registry itself.
+`aap_commands/__init__.py` calls each command module's `register(client,
+settings)` once at startup:
+
+```python
+def register_aap_commands(client, settings):
+    ping.register(client, settings)
+    approvals.register(client, settings)
+    myjobs.register(client, settings)
+```
+
+Each command module defines its handler inside its own `register`
+function, so the handler closes over the `client`/`settings` passed in at
+registration time. This is the project's dependency injection: no
+framework, no globals beyond the `commands.py` registry itself. Adding a
+new command means adding a new module with a `register` function and one
+line in `aap_commands/__init__.py`.
 
 ## Models
 
