@@ -26,7 +26,7 @@ def register_aap_commands(client: httpx.AsyncClient, settings: Settings) -> None
         if not approvals.results:
             return "No pending workflow approvals"
 
-        lines = [f"{approvals.count} pending workflow approval(s):"]
+        lines = [f"{approvals.count} pending workflow approval(s):\n"]
         lines.extend(_format_approval(approval) for approval in approvals.results)
         return "\n".join(lines)
 
@@ -35,13 +35,17 @@ def _format_approval(approval: WorkflowApproval) -> str:
     """Render a single workflow approval as a bulleted Slack message line."""
     workflow = approval.workflow_name or "unknown workflow"
     expiration = _format_expiration(approval.approval_expiration)
-    return f"\u2022 [{workflow}] {approval.name} \u2014 {expiration}"
+    if expiration is None:
+        response_message = f"- {workflow}"
+    else:
+        response_message = f"- {workflow} - expires: {expiration})"
+    return response_message
 
 
-def _format_expiration(expires_at: datetime | None) -> str:
+def _format_expiration(expires_at: datetime | None) -> str | None:
     """Render an approval's expiration as a human-friendly relative time."""
     if expires_at is None:
-        return "no timeout"
+        return None
 
     remaining = expires_at - datetime.now(UTC)
     total_minutes = round(remaining.total_seconds() / 60)
