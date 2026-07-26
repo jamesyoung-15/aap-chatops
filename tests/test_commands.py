@@ -31,15 +31,15 @@ def test_parse_trigger_returns_none_for_bare_bang():
     assert parse_trigger("!") is None
 
 
-def test_dispatch_calls_registered_handler():
+async def test_dispatch_calls_registered_handler():
     @commands.command("ping")
-    def handle_ping(ctx: CommandContext) -> str:
+    async def handle_ping(ctx: CommandContext) -> str:
         return f"pong to {ctx.user_id}"
 
     ctx = CommandContext(user_id="U1", channel_id="C1", raw_text="!ping")
-    assert commands.dispatch("ping", ctx) == "pong to U1"
+    assert await commands.dispatch("ping", ctx) == "pong to U1"
 
 
-def test_dispatch_returns_none_for_unknown_command():
+async def test_dispatch_returns_none_for_unknown_command():
     ctx = CommandContext(user_id="U1", channel_id="C1", raw_text="!nope")
-    assert commands.dispatch("nope", ctx) is None
+    assert await commands.dispatch("nope", ctx) is None
