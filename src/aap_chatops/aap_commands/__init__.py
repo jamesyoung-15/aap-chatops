@@ -3,6 +3,7 @@
 import httpx
 
 from aap_chatops.aap_commands import approvals, myjobs, ping
+from aap_chatops.aap_commands import help as help_command
 from aap_chatops.settings import Settings
 
 
@@ -11,3 +12,4 @@ def register_aap_commands(client: httpx.AsyncClient, settings: Settings) -> None
     ping.register(client, settings)
     approvals.register(client, settings)
     myjobs.register(client, settings)
+    help_command.register(client, settings)
