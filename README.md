@@ -5,7 +5,7 @@ Python-based ChatOps bridge that connects chat platforms (Slack, Teams, etc.) to
 Features:
 
 - Use chat commands to run AAP commands (eg. list pending workflow approvals for today, check status of today's jobs for current user)
-<!-- - Add scheduled messages for monitoring/alerts -->
+- Add scheduled tasks for automated messages/alerts
 
 <!-- Current use cases: -->
 
