@@ -46,7 +46,7 @@ def build_app(settings: Settings) -> AsyncApp:
     return app
 
 
-async def start(settings: Settings | None = None) -> None:
+async def start_slack(settings: Settings | None = None) -> None:
     """Connect over Socket Mode and block until interrupted, then disconnect cleanly."""
     settings = settings or Settings()
     app = build_app(settings)
@@ -58,4 +58,4 @@ async def start(settings: Settings | None = None) -> None:
 
 
 if __name__ == "__main__":
-    asyncio.run(start())
+    asyncio.run(start_slack())
