@@ -30,7 +30,7 @@ async def test_myjobs_command_lists_jobs_run_today(
     assert reply is not None
     assert "1 workflow job(s) run today:" in reply
     assert "#70487 (TEST) flow/james_playground - running" in reply
-    assert "https://aap.example.com/jobs/workflow/70487/output" in reply
+    assert "https://aap.example.com/execution/jobs/workflow/70487/output" in reply
 
 
 async def test_myjobs_command_reports_no_jobs_today(make_settings):
