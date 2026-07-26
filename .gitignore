@@ -17,3 +17,6 @@ htmlcov/
 
 # Environment variables and secrets
 .env
+
+# Logs
+logs/
