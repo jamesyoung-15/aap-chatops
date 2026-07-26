@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -29,6 +29,22 @@ class Settings(BaseSettings):
     )
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+
+    @computed_field
+    @property
+    def aap_api_url(self) -> str | None:
+        """Construct the AAP API URL from the base URL"""
+        if self.aap_base_url:
+            return f"https://{self.aap_base_url}/api/controller/v2"
+        return None
+
+    @computed_field
+    @property
+    def aap_api_headers(self) -> dict[str, str] | None:
+        """Construct the headers for AAP API requests"""
+        if self.aap_api_token:
+            return {"Authorization": f"Bearer {self.aap_api_token}"}
+        return None
 
 
 if __name__ == "__main__":
