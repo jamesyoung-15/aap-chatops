@@ -39,6 +39,14 @@ Note: This project has only been tested on AAP 2.6 with controller API V2. V1 ap
 
     Then fill out required fields `aap_api_token` and `aap_base_url` alongside the chat platform option and credentials.
 
+3. Setup scheduled alerts
+
+    ```bash
+    cp alerts.example.yaml alerts.yaml
+    ```
+
+    Each entry runs a registered alert task on a cron schedule. Set `default_alert_channel_id` in `.env` and invite the bot to that channel, otherwise posts fail with `channel_not_found`. To run without scheduled alerts, set `alerts_enabled=false` instead of creating the file.
+
 ### Usage
 
 Right now fastest way is to run: `uv run src/aap_chatops/main.py`. Another option is to use the `scripts/run-bot-tmux.sh` to run the bot in a separate tmux session.
