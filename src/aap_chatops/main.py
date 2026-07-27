@@ -48,12 +48,17 @@ async def main() -> None:
                     f"Unsupported chat_platform: {settings.chat_platform!r}"
                 )
 
+        # With nothing to schedule, run the listener directly. A TaskGroup would wrap
+        # any failure in an ExceptionGroup and bury the actual error.
+        if not alerts:
+            await runtime.serve()
+            return
+
         async with asyncio.TaskGroup() as task_group:
             task_group.create_task(runtime.serve(), name="chat-listener")
-            if alerts:
-                task_group.create_task(
-                    run_alerts(alerts, runtime.post_message), name="alert-scheduler"
-                )
+            task_group.create_task(
+                run_alerts(alerts, runtime.post_message), name="alert-scheduler"
+            )
 
 
 def _resolve_enabled_alerts(settings: Settings) -> list[ScheduledAlert]:
