@@ -116,28 +116,3 @@ async def get_my_workflow_jobs(
     except ValidationError as exc:
         logger.error("Unexpected response shape from workflow_jobs endpoint: %s", exc)
         return None
-
-
-if __name__ == "__main__":
-    import asyncio
-
-    from aap_chatops.settings import Settings
-
-    settings = Settings()
-
-    async def main():
-        async with httpx.AsyncClient(
-            headers=settings.aap_api_headers, follow_redirects=True
-        ) as client:
-            aap_api_url = (
-                "https://amfam-aap.apps.dall-oc-001-prd.ent.corp/api/controller/v2"
-            )
-            user_info = await get_aap_user_info(client, aap_api_url)
-            if not user_info:
-                print("Failed to fetch user info from AAP API")
-            else:
-                print(
-                    f"User info: {user_info.id}, {user_info.username}, {user_info.email}"
-                )
-
-    asyncio.run(main())
