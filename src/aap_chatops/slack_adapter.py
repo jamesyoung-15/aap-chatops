@@ -2,6 +2,7 @@
 
 import asyncio
 import re
+from dataclasses import dataclass
 
 import truststore
 
@@ -46,15 +47,36 @@ def build_app(settings: Settings) -> AsyncApp:
     return app
 
 
-async def start_slack(settings: Settings | None = None) -> None:
-    """Connect over Socket Mode and block until interrupted, then disconnect cleanly."""
-    settings = settings or Settings()
+@dataclass
+class SlackRuntime:
+    """Owns the Bolt app so callers can both serve Socket Mode and post unprompted."""
+
+    app: AsyncApp
+    handler: AsyncSocketModeHandler
+
+    async def serve(self) -> None:
+        """Connect over Socket Mode and block until interrupted, then disconnect cleanly."""
+        try:
+            await self.handler.start_async()
+        finally:
+            await self.handler.close_async()
+
+    async def post_message(self, channel_id: str, text: str) -> None:
+        """Post to `channel_id`. Raises on failure: the caller owns the failure policy."""
+        await self.app.client.chat_postMessage(channel=channel_id, text=text)
+
+
+def build_slack_runtime(settings: Settings) -> SlackRuntime:
+    """Build the Bolt app and its Socket Mode handler without connecting yet."""
     app = build_app(settings)
-    handler = AsyncSocketModeHandler(app, settings.slack_app_token)
-    try:
-        await handler.start_async()
-    finally:
-        await handler.close_async()
+    return SlackRuntime(
+        app=app, handler=AsyncSocketModeHandler(app, settings.slack_app_token)
+    )
+
+
+async def start_slack(settings: Settings | None = None) -> None:
+    """Serve Socket Mode with no scheduler alongside it."""
+    await build_slack_runtime(settings or Settings()).serve()
 
 
 if __name__ == "__main__":

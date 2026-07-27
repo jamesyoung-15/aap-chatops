@@ -1,8 +1,10 @@
 """Project configurable settings loaded from .env"""
 
+from pathlib import Path
 from typing import Literal
+from zoneinfo import ZoneInfo
 
-from pydantic import Field, computed_field, model_validator
+from pydantic import Field, computed_field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from aap_chatops.models.aap_user import AAPUser
@@ -30,6 +32,25 @@ class Settings(BaseSettings):
         description="Slack account token used to authenticate socket mode connections",
     )
 
+    # scheduled alert configs
+    alerts_enabled: bool = Field(
+        default=True,
+        description="Run scheduled alerts alongside the chat listener. Set false on any "
+        "second instance, or two bots will post the same alert to the same channel.",
+    )
+    alerts_config_path: Path = Field(
+        default=Path("alerts.yaml"), description="Path to the alert schedule config"
+    )
+    default_alert_channel_id: str | None = Field(
+        default=None,
+        description="Channel id alerts post to when an entry doesn't name one "
+        "(eg. C0123456789)",
+    )
+    alert_timezone: str = Field(
+        default="America/Chicago",
+        description="IANA timezone alert schedules are interpreted in",
+    )
+
     # Runtime-only cache, not sourced from env; populated once at startup and
     # reused by commands that need to know who's calling (eg. !myjobs).
     aap_user: AAPUser | None = Field(default=None, exclude=True)
@@ -50,6 +71,16 @@ class Settings(BaseSettings):
                 "slack_bot_token and slack_app_token are required when chat_platform is 'slack'"
             )
         return self
+
+    @field_validator("alert_timezone")
+    @classmethod
+    def _validate_alert_timezone(cls, value: str) -> str:
+        """Catch a typo at startup rather than when an alert first tries to fire."""
+        try:
+            ZoneInfo(value)
+        except (ValueError, KeyError) as exc:
+            raise ValueError(f"unknown timezone {value!r}") from exc
+        return value
 
     @model_validator(mode="after")
     def _require_aap_configurations(self) -> "Settings":
