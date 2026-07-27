@@ -53,7 +53,7 @@ success case, an HTTP error, and an unexpected response shape.
 Create `src/aap_chatops/aap_commands/<name>.py`. Every command module
 exposes a `register(client, settings)` function and defines its handler
 inside it, so the handler closes over `client`/`settings`. Pass a short
-`description` to `@command(...)` — it shows up in `!help`:
+`description` to `@command(...)`, it shows up in `!help`:
 
 ```python
 """!jobstatus command: shows the status of a single job."""

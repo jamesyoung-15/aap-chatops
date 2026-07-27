@@ -69,6 +69,11 @@ tool exactly which file to trust, rather than delegating to the OS trust
 store the way `truststore` does. It does not help the NixOS case, since
 the problem there is a missing bundle rather than a wrong one.
 
+Note that `main.py` imports `scheduler.py`, `alert_config.py`, and
+`aap_alerts/` before `slack_adapter.py`, so those modules must stay free of
+any Slack or `aiohttp` import. This is why `scheduler.py` takes a plain
+`Callable` to post messages rather than a Slack client.
+
 ## References
 
 - [Python 3.13.x SSL security changes](https://discuss.python.org/t/python-3-13-x-ssl-security-changes/91266)

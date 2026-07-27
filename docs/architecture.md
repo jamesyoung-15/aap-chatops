@@ -7,6 +7,10 @@ Automation Platform (AAP) controller API. Chat messages starting with `!`
 are parsed into a command keyword, dispatched to a registered handler, and
 the handler's reply is posted back to the chat platform.
 
+The bot also posts unprompted. Scheduled alerts run on a cron schedule and
+post without anyone asking. Both halves run in one process, on one event
+loop, sharing a single AAP client.
+
 ## Modules
 
 - `commands.py` - platform-agnostic command registry and dispatcher. No
@@ -22,14 +26,27 @@ the handler's reply is posted back to the chat platform.
 - `formatting.py` - reply-formatting helpers shared by more than one
   caller. Depends only on `models/`, so anything that renders AAP data can
   use it without importing the command layer.
+- `alerts.py` - platform-agnostic registry of alert tasks. A task only
+  knows how to build its message, not when or where it is posted.
+- `alert_config.py` - parses `alerts.yaml` and binds each entry to a
+  registered task via `resolve_alerts`.
+- `scheduler.py` - APScheduler wiring, startup catch-up, and the per-run
+  error boundary. Takes a `post_message` callable, so it never imports
+  Slack.
+- `state.py` - records which scheduled occurrence each entry last posted,
+  so a restart does not repost.
+- `aap_alerts/` - one module per alert task, mirroring `aap_commands/`.
 - `models/` - one file per AAP resource (eg. `workflow_approval.py`), plus
   `base.py` for the generic paginated list envelope.
 - `settings.py` - configuration loaded from `.env` via pydantic-settings.
 - `logging_config.py` - configures the root logger (file + console).
 - `slack_adapter.py` - Slack Socket Mode adapter. The only module aware of
-  Slack-specific types.
+  Slack-specific types. `SlackRuntime` exposes `serve()` for the listener
+  and `post_message()` for the scheduler.
 - `main.py` - composition root: builds settings, configures logging,
-  fetches the current AAP user, registers commands, starts the adapter.
+  fetches the current AAP user, registers commands and alert tasks,
+  resolves the alert schedule, then runs the listener and the scheduler
+  together in an `asyncio.TaskGroup`.
 
 ## Command dispatch flow
 
@@ -108,6 +125,28 @@ new command means adding a new module with a `register` function and one
 line in `aap_commands/__init__.py`; passing a `description` to
 `@command(...)` gets it listed in `!help` automatically.
 
+## Alert flow
+
+Alerts are split so that code says *what* to post and config says *when*
+and *where*:
+
+1. `aap_alerts/` modules register tasks with `@alert_task(name)`. A task is
+   an async function returning a string, with no schedule or channel.
+2. `alerts.yaml` holds entries naming a task plus a cron expression,
+   channel, and optional catch-up window.
+3. At startup `resolve_alerts` binds entries to registered tasks. An
+   unknown task name, bad cron, or unresolvable channel raises before the
+   bot connects, so config mistakes are boot failures rather than 10 AM
+   surprises.
+4. `scheduler.py` registers one APScheduler job per entry, first running
+   any missed occurrence that opted into catch-up.
+5. When a job fires it runs the task, posts via the callable it was given,
+   and records the occurrence in `.state/alerts.json`. Failures are caught
+   and logged: the listener shares this process, so an alert must never
+   escape.
+
+See `docs/adding-an-alert.md` for the steps to add one.
+
 ## Models
 
 `models/base.py` defines a generic pagination envelope:
@@ -152,3 +191,8 @@ duplicates.
 
 See `docs/ssl-certificate-verification.md` for why `truststore.inject_into_ssl()`
 must run before `slack_bolt` is imported.
+
+APScheduler's `from_crontab` numbers days of the week from 0=Monday, while
+cron uses 0=Sunday, and it does not translate between them. `"1-5"` would
+schedule tue-sat. `alert_config.py` rejects numeric day-of-week fields for
+this reason, so use names (`mon-fri`).
