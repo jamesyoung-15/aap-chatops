@@ -18,6 +18,9 @@ htmlcov/
 # Environment variables and secrets
 .env
 
+# User defined alert schedules, copied from alerts.example.yaml
+alerts.yaml
+
 # Logs
 logs/
 

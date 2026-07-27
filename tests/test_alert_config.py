@@ -66,7 +66,8 @@ def test_load_alert_config_treats_an_empty_file_as_no_alerts(tmp_path):
 
 
 def test_load_alert_config_raises_for_a_missing_file(tmp_path):
-    with pytest.raises(AlertConfigError, match="Could not read"):
+    """The message must say how to fix it: this is what a fresh clone hits."""
+    with pytest.raises(AlertConfigError, match="alerts.example.yaml"):
         load_alert_config(tmp_path / "nope.yaml")
 
 
@@ -280,7 +281,7 @@ def test_resolve_alerts_applies_a_per_entry_timezone(registered_task):
     assert str(resolved[0].trigger.timezone) == "UTC"
 
 
-def test_committed_alerts_yaml_is_valid():
-    """The repo's own alerts.yaml must always parse, even before its tasks exist."""
+def test_shipped_example_config_is_valid():
+    """The example users copy must always parse, even before its tasks exist."""
     repo_root = Path(__file__).resolve().parents[1]
-    assert load_alert_config(repo_root / "alerts.yaml").alerts
+    assert load_alert_config(repo_root / "alerts.example.yaml").alerts

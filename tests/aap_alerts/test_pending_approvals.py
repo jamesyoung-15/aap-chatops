@@ -75,14 +75,14 @@ def test_register_exposes_the_task_with_a_description(make_settings):
     assert tasks[0].description == "Summary of pending workflow approvals"
 
 
-def test_committed_alerts_yaml_resolves_against_the_registered_tasks(make_settings):
-    """Every task named in the repo's alerts.yaml must actually exist once registered."""
+def test_example_config_resolves_against_the_registered_tasks(make_settings):
+    """Every task named in the shipped example must actually exist once registered."""
     register_aap_alert_tasks(
         make_client(lambda request: approvals_response()), make_settings()
     )
 
     repo_root = Path(__file__).resolve().parents[2]
-    config = load_alert_config(repo_root / "alerts.yaml")
+    config = load_alert_config(repo_root / "alerts.example.yaml")
     resolved = resolve_alerts(
         config, default_channel_id="C0TEST", default_timezone="America/Chicago"
     )

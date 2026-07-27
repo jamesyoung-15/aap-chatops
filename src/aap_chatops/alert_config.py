@@ -92,6 +92,11 @@ def load_alert_config(path: Path) -> AlertConfig:
     """Read and validate `alerts.yaml`. Raises AlertConfigError on any problem."""
     try:
         raw = path.read_text(encoding="utf-8")
+    except FileNotFoundError as exc:
+        raise AlertConfigError(
+            f"No alert config at {path}. Copy alerts.example.yaml to alerts.yaml, "
+            "or set alerts_enabled=false to run without scheduled alerts."
+        ) from exc
     except OSError as exc:
         raise AlertConfigError(f"Could not read alert config {path}: {exc}") from exc
 
